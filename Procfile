@@ -1,1 +1,1 @@
-web: mini-site-scrapper
+web: mini-site-scraper

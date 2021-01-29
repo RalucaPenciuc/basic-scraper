@@ -1,1 +1,1 @@
-web: bin/mini-site-scrapper
+web: mini-site-scrapper

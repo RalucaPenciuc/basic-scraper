@@ -13,9 +13,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	p, ok := os.LookupEnv("PORT")
+	p := os.Getenv("PORT")
 
-	if !ok {
+	if p == "" {
 		p = "8080"
 	}
 
@@ -23,5 +23,6 @@ func main() {
 
 	http.HandleFunc("/", rootHandler)
 
+	log.Println("Listening on port: ", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

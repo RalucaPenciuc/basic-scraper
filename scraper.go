@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -11,6 +12,16 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	p, ok := os.LookupEnv("PORT")
+
+	if !ok {
+		p = "8080"
+	}
+
+	port := fmt.Sprintf(":%s", p)
+
 	http.HandleFunc("/", rootHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	log.Fatal(http.ListenAndServe(port, nil))
 }

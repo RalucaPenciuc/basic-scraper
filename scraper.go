@@ -13,6 +13,46 @@ import (
 
 var baseSite string = "https://knoxon.co"
 
+// MakeSet initialize the set
+func makeSet() *Set {
+	return &Set{
+		container: make(map[string]struct{}),
+	}
+}
+
+var links = makeSet()
+
+// Set implementation
+type Set struct {
+	container map[string]struct{}
+}
+
+// Size of the set
+func (s *Set) Size() int {
+	return len(s.container)
+}
+
+// Exists check
+func (s *Set) Exists(key string) bool {
+	_, exists := s.container[key]
+	return exists
+}
+
+// Add element to set
+func (s *Set) Add(key string) {
+	s.container[key] = struct{}{}
+}
+
+// Remove element from set
+func (s *Set) Remove(key string) error {
+	_, exists := s.container[key]
+	if !exists {
+		return fmt.Errorf("Remove Error: Item does not exist")
+	}
+	delete(s.container, key)
+	return nil
+}
+
 func isNewPage(link string) bool {
 
 	if strings.Contains(link, "#") {
@@ -23,10 +63,18 @@ func isNewPage(link string) bool {
 		return false
 	}
 
+	if strings.Contains(link, "@") {
+		return false
+	}
+
+	if strings.Contains(link, "tel") {
+		return false
+	}
+
 	return true
 }
 
-func parseDoc(node *html.Node, w http.ResponseWriter) {
+func parseDoc(node *html.Node, w http.ResponseWriter, r *http.Request) {
 
 	if node.Type == html.ElementNode && node.Data == "title" {
 		fmt.Fprintf(w, "SITE TITLE: %s\n", node.FirstChild.Data)
@@ -36,18 +84,25 @@ func parseDoc(node *html.Node, w http.ResponseWriter) {
 		for _, a := range node.Attr {
 			if a.Key == "href" && isNewPage(a.Val) {
 				fmt.Fprintf(w, "%s\n", a.Val)
-				// newSite := baseSite + a.Val
+				newSite := baseSite + a.Val
+				// fmt.Println(newSite)
+				if !links.Exists(newSite) {
+					links.Add(newSite)
+					scrape(newSite, w, r)
+				}
 				break
 			}
 		}
 	}
 
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		parseDoc(c, w)
+		parseDoc(c, w, r)
 	}
 }
 
 func scrape(site string, w http.ResponseWriter, r *http.Request) {
+
+	links.Add(site)
 
 	response, errorGet := http.Get(site)
 	if errorGet != nil {
@@ -67,7 +122,7 @@ func scrape(site string, w http.ResponseWriter, r *http.Request) {
 		log.Fatal(errorParse)
 	}
 
-	parseDoc(doc, w)
+	parseDoc(doc, w, r)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
